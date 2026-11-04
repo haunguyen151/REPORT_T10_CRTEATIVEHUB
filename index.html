@@ -357,6 +357,7 @@ function show(i,push=true){
   btns.forEach((b,j)=>b.setAttribute('aria-selected',j===i));
   panels.forEach((p,j)=>{ if(j===i&&p.hidden) rvReset(p); p.hidden=j!==i; });
   if(i===1){ requestAnimationFrame(()=>{syncLdp();initLdp();setTimeout(syncLdp,400)}); }
+  setTimeout(rvSchedule,30); setTimeout(rvSchedule,350);
   if(i===2) requestAnimationFrame(()=>panels[2].querySelectorAll('.bar i').forEach(e=>e.style.width=e.dataset.w+'%'));
   if(push) try{history.replaceState(null,'','#'+TABS[i][2])}catch(e){}
 }
@@ -395,8 +396,17 @@ document.documentElement.classList.add('js');
 const RV_SEL='.title h2,.title p,.card .tag,.card h3,.card .sub,.dept .head,.tbl h4';
 document.querySelectorAll(RV_SEL).forEach(e=>e.classList.add('rv'));
 document.querySelectorAll('.card,.title').forEach(c=>c.querySelectorAll('.rv').forEach((e,i)=>{e.style.transitionDelay=(i*0.18)+'s'}));
-const rvIO=('IntersectionObserver' in window)?new IntersectionObserver(es=>es.forEach(en=>{ if(en.isIntersecting) en.target.classList.add('in'); }),{threshold:.2,rootMargin:'0px 0px -8% 0px'}):null;
-document.querySelectorAll('.rv').forEach(e=>{ if(rvIO) rvIO.observe(e); else e.classList.add('in'); });
+let rvQ=false;
+function rvCheck(){
+  rvQ=false; const vh=innerHeight||document.documentElement.clientHeight;
+  document.querySelectorAll('.panel:not([hidden]) .rv:not(.in)').forEach(e=>{
+    const r=e.getBoundingClientRect();
+    if(r.height>0 && r.top<vh*0.93) e.classList.add('in');
+  });
+}
+function rvSchedule(){ if(!rvQ){ rvQ=true; requestAnimationFrame(rvCheck); } }
+addEventListener('scroll',rvSchedule,{passive:true}); addEventListener('resize',rvSchedule); addEventListener('load',()=>{rvSchedule();setTimeout(rvSchedule,400);setTimeout(rvSchedule,1200)});
+rvSchedule(); setTimeout(rvSchedule,300);
 function rvReset(panel){ panel.querySelectorAll('.rv.in').forEach(e=>e.classList.remove('in')); void panel.offsetHeight; }
 const start=TABS.findIndex(t=>'#'+t[2]===location.hash);
 show(start<0?0:start,false);
